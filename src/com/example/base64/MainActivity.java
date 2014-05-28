@@ -35,7 +35,8 @@ public class MainActivity extends Activity {
 	ImageView image=null;
 	private String tagName = "MYAPI";
 	private EditText inputValue = null;
-	private Button submit = null;
+	private Button Httpsubmit = null;
+	private Button RPCsubmit = null;
 	URL url=null;
 	URLConnection connection=null;
 	private static final String BaseUrl = "http://api.uihoo.com/qrcode/qrcode.http.php?";
@@ -45,18 +46,20 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.main);
 		image = (ImageView) findViewById(R.id.Image);
 		inputValue = (EditText) findViewById(R.id.Context);
-		submit = (Button) findViewById(R.id.Button);
-		submit.setOnClickListener(new GenrateBitmap());
+		Httpsubmit = (Button) findViewById(R.id.UseHttp);
+		Httpsubmit.setOnClickListener(new UseHTTPInterface());
+		RPCsubmit = (Button) findViewById(R.id.UseRPC);
+		RPCsubmit.setOnClickListener(new UseRPCInterface());
 		
 	}
-	private final class GenrateBitmap implements OnClickListener{
+	private final class UseHTTPInterface implements OnClickListener{
 
 		@Override
 		public void onClick(View v) {
 			String format = "xml";
 			int width = 200;
 			Log.i(tagName, "initFinish");
-			String value = inputValue.getText().toString().trim();
+			String value = inputValue.getText().toString();
 			value.replaceAll(" ", "%");
 			String base64 = null;
 			InputStream fromurl=null;
@@ -64,14 +67,7 @@ public class MainActivity extends Activity {
 //				String urlcontext = BaseUrl+"string="+value+"&width="+width+"&bgc=FFFFFF&fgc=000000&logo=http://api.uihoo.com/demo/images/logo.png&logosize=0.4&el=3&format="
 //						+format;
 				String urlcontext = "http://api.uihoo.com/qrcode/qrcode.http.php?string="+value+"&width=150&bgc=FFFFFF&fgc=000000&logo=http://api.uihoo.com/demo/images/logo.png&logosize=0.4&el=3&format=xml";
-				PHPRPC_Client client = new PHPRPC_Client("http://api.uihoo.com/qrcode/qrcode.phprpc.php");
-				AssocArray result = (AssocArray) client.invoke("MYAPI_qrcode",new Object[]{"http://api.uihoo.com",150,"FFFFFF","000000","http://api.uihoo.com/demo/images/logo.png",0.4,3});
-				Map map = result.toHashMap();
-				Iterator keys = map.keySet().iterator();
-				while(keys.hasNext()){
-					Log.i(tagName,"Keys name ="+ keys.next().toString());
-				}
-				byte[] base64Obj = (byte[]) map.get("base64");
+				
 				/*
 				 * Try to use the RPHApi to generate the bitmap 
 				 */
@@ -98,6 +94,7 @@ public class MainActivity extends Activity {
 				Bitmap bitmap = BitmapFactory.decodeByteArray(forbitmap, 0, forbitmap.length);
 				image.setImageBitmap(bitmap);
 				Log.i(tagName, "base64 length"+forbitmap.length);
+				
 				Log.i(tagName, "End");
 				Toast.makeText(v.getContext(), "生成结束", Toast.LENGTH_LONG).show();
 			} catch (Exception e) {
@@ -107,12 +104,36 @@ public class MainActivity extends Activity {
 				e.printStackTrace();
 			}finally{
 				try {
-					fromurl.close();
+//					fromurl.close();
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
+		}
+	}
+	private final class UseRPCInterface implements OnClickListener{
+
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			String value = inputValue.getText().toString();
+			value.replaceAll(" ", "%");
+			PHPRPC_Client client = new PHPRPC_Client("http://api.uihoo.com/qrcode/qrcode.phprpc.php");
+			AssocArray result = (AssocArray) client.invoke("MYAPI_qrcode",new Object[]{value,150,"FFFFFF","000000","http://api.uihoo.com/demo/images/logo.png",0.4,3});
+			Map map = result.toHashMap();
+			Iterator keys = map.keySet().iterator();
+			while(keys.hasNext()){
+				Log.i(tagName,"Keys name ="+ keys.next().toString());
+			}
+			byte[] base64Obj = (byte[]) map.get("base64");
+			String temp = new String(base64Obj);
+			String[] subs = temp.split(",");
+			base64Obj = subs[1].getBytes();
+			byte[] forbitmap = Base64.decode(base64Obj, Base64.DEFAULT);
+			Bitmap bitmap = BitmapFactory.decodeByteArray(forbitmap, 0, forbitmap.length);
+			image.setImageBitmap(bitmap);
+			Toast.makeText(v.getContext(), "生成结束", Toast.LENGTH_LONG).show();
 		}
 		
 	}

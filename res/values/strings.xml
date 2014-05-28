@@ -1,5 +1,6 @@
 <resources>
 
     <string name="app_name">Base64</string>
-    <string name="ButtonName">提交</string>
+    <string name="UseHttpButton">调用Http接口</string>
+    <string name="UseRPCButton">调用RPC接口</string>
 </resources>

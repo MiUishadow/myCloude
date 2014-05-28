@@ -1,0 +1,5 @@
+<resources>
+
+    <string name="app_name">Base64</string>
+    <string name="ButtonName">提交</string>
+</resources>

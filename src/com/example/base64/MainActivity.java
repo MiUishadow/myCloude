@@ -1,5 +1,8 @@
 package com.example.base64;
 
+import hprose.client.HproseClient;
+import hprose.client.HproseHttpClient;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -37,6 +40,7 @@ public class MainActivity extends Activity {
 	private EditText inputValue = null;
 	private Button Httpsubmit = null;
 	private Button RPCsubmit = null;
+	private Button HPROSEsubmit = null;
 	URL url=null;
 	URLConnection connection=null;
 	private static final String BaseUrl = "http://api.uihoo.com/qrcode/qrcode.http.php?";
@@ -50,6 +54,9 @@ public class MainActivity extends Activity {
 		Httpsubmit.setOnClickListener(new UseHTTPInterface());
 		RPCsubmit = (Button) findViewById(R.id.UseRPC);
 		RPCsubmit.setOnClickListener(new UseRPCInterface());
+		HPROSEsubmit = (Button) findViewById(R.id.UseHPROSE);
+		HPROSEsubmit.setOnClickListener(new UseHPROSE());
+		
 		
 	}
 	private final class UseHTTPInterface implements OnClickListener{
@@ -68,9 +75,6 @@ public class MainActivity extends Activity {
 //						+format;
 				String urlcontext = "http://api.uihoo.com/qrcode/qrcode.http.php?string="+value+"&width=150&bgc=FFFFFF&fgc=000000&logo=http://api.uihoo.com/demo/images/logo.png&logosize=0.4&el=3&format=xml";
 				
-				/*
-				 * Try to use the RPHApi to generate the bitmap 
-				 */
 				url = new URL(urlcontext);
 				connection = url.openConnection();
 				fromurl = connection.getInputStream();
@@ -96,11 +100,11 @@ public class MainActivity extends Activity {
 				Log.i(tagName, "base64 length"+forbitmap.length);
 				
 				Log.i(tagName, "End");
-				Toast.makeText(v.getContext(), "…˙≥…Ω· ¯", Toast.LENGTH_LONG).show();
+				Toast.makeText(v.getContext(), "ËØ∑Ê±ÇÊàêÂäü", Toast.LENGTH_LONG).show();
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				Log.e(tagName, "Except:", e.getCause());
-				Toast.makeText(v.getContext(), "‘À––¥ÌŒÛ", Toast.LENGTH_LONG).show();
+				Toast.makeText(v.getContext(),"ËØ∑Ê±ÇÂ§±Ë¥•", Toast.LENGTH_LONG).show();
 				e.printStackTrace();
 			}finally{
 				try {
@@ -113,19 +117,20 @@ public class MainActivity extends Activity {
 		}
 	}
 	private final class UseRPCInterface implements OnClickListener{
-
+		private PHPRPC_Client client = null;
+		private AssocArray result = null;
+		public UseRPCInterface(){
+			client = new PHPRPC_Client("http://api.uihoo.com/qrcode/qrcode.phprpc.php");
+		}
 		@Override
 		public void onClick(View v) {
 			// TODO Auto-generated method stub
 			String value = inputValue.getText().toString();
 			value.replaceAll(" ", "%");
-			PHPRPC_Client client = new PHPRPC_Client("http://api.uihoo.com/qrcode/qrcode.phprpc.php");
-			AssocArray result = (AssocArray) client.invoke("MYAPI_qrcode",new Object[]{value,150,"FFFFFF","000000","http://api.uihoo.com/demo/images/logo.png",0.4,3});
+			
+			result = (AssocArray) client.invoke("MYAPI_qrcode",new Object[]{value,150,"FFFFFF","000000","http://api.uihoo.com/demo/images/logo.png",0.4,3});
 			Map map = result.toHashMap();
-			Iterator keys = map.keySet().iterator();
-			while(keys.hasNext()){
-				Log.i(tagName,"Keys name ="+ keys.next().toString());
-			}
+			
 			byte[] base64Obj = (byte[]) map.get("base64");
 			String temp = new String(base64Obj);
 			String[] subs = temp.split(",");
@@ -133,7 +138,36 @@ public class MainActivity extends Activity {
 			byte[] forbitmap = Base64.decode(base64Obj, Base64.DEFAULT);
 			Bitmap bitmap = BitmapFactory.decodeByteArray(forbitmap, 0, forbitmap.length);
 			image.setImageBitmap(bitmap);
-			Toast.makeText(v.getContext(), "…˙≥…Ω· ¯", Toast.LENGTH_LONG).show();
+			Toast.makeText(v.getContext(),"ËØ∑Ê±ÇÊàêÂäü", Toast.LENGTH_LONG).show();
+		}
+	}
+	private final class UseHPROSE implements OnClickListener{
+		private HproseHttpClient HttpClient = null;
+		private String value = null;
+		public UseHPROSE(){
+			HttpClient = new HproseHttpClient();
+			HttpClient.useService("http://api.uihoo.com/qrcode/qrcode.hprose.php");
+		}
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			value = inputValue.getText().toString();
+			try {
+				Map result = (Map) HttpClient.invoke("MYAPI_qrcode", new Object[]{value,150,"FFFFFF","000000","http://api.uihoo.com/demo/images/logo.png",0.4,3});
+
+				String fromhprose = (String) result.get("base64");
+				String temp = new String(fromhprose.getBytes());
+				String[] subs = temp.split(",");
+				byte[] fromprosebyte = subs[1].getBytes();
+				byte[] forBitmap = Base64.decode(fromprosebyte, Base64.DEFAULT);
+				Bitmap bitmap = BitmapFactory.decodeByteArray(forBitmap, 0, forBitmap.length);
+				image.setImageBitmap(bitmap);
+				Toast.makeText(v.getContext(),"ËØ∑Ê±ÇÊàêÂäü", Toast.LENGTH_LONG).show();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				Log.i(tagName, "Exception");
+			}
 		}
 		
 	}

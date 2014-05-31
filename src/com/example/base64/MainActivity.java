@@ -25,6 +25,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.NetworkOnMainThreadException;
+import android.os.StrictMode;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -41,8 +42,7 @@ public class MainActivity extends Activity {
 	private Button Httpsubmit = null;
 	private Button RPCsubmit = null;
 	private Button HPROSEsubmit = null;
-	URL url=null;
-	URLConnection connection=null;
+	
 	private static final String BaseUrl = "http://api.uihoo.com/qrcode/qrcode.http.php?";
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -56,25 +56,32 @@ public class MainActivity extends Activity {
 		RPCsubmit.setOnClickListener(new UseRPCInterface());
 		HPROSEsubmit = (Button) findViewById(R.id.UseHPROSE);
 		HPROSEsubmit.setOnClickListener(new UseHPROSE());
-		
+		//网络访问兼容
+		StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()  
+        .detectDiskReads()  
+        .detectDiskWrites()  
+        .detectNetwork()   // or .detectAll() for all detectable problems  
+        .penaltyLog()  
+        .build());  
+StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()  
+        .detectLeakedSqlLiteObjects()  
+        .detectLeakedClosableObjects()  
+        .penaltyLog()  
+        .penaltyDeath()  
+        .build()); 
 		
 	}
 	private final class UseHTTPInterface implements OnClickListener{
-
+		URL url=null;
+		URLConnection connection=null;
 		@Override
 		public void onClick(View v) {
-			String format = "xml";
-			int width = 200;
-			Log.i(tagName, "initFinish");
+			
 			String value = inputValue.getText().toString();
-			value.replaceAll(" ", "%");
 			String base64 = null;
 			InputStream fromurl=null;
 			try {
-//				String urlcontext = BaseUrl+"string="+value+"&width="+width+"&bgc=FFFFFF&fgc=000000&logo=http://api.uihoo.com/demo/images/logo.png&logosize=0.4&el=3&format="
-//						+format;
-				String urlcontext = "http://api.uihoo.com/qrcode/qrcode.http.php?string="+value+"&width=150&bgc=FFFFFF&fgc=000000&logo=http://api.uihoo.com/demo/images/logo.png&logosize=0.4&el=3&format=xml";
-				
+				String urlcontext = "http://api.uihoo.com/qrcode/qrcode.http.php?string="+value+"&width=150&bgc=FFFFFF&fgc=000000&logo=http://api.uihoo.com/demo/images/logo.png&logosize=0.4&el=3&format=xml";		
 				url = new URL(urlcontext);
 				connection = url.openConnection();
 				fromurl = connection.getInputStream();
@@ -97,22 +104,14 @@ public class MainActivity extends Activity {
 				byte[] forbitmap = Base64.decode(subs[1], Base64.DEFAULT);
 				Bitmap bitmap = BitmapFactory.decodeByteArray(forbitmap, 0, forbitmap.length);
 				image.setImageBitmap(bitmap);
-				Log.i(tagName, "base64 length"+forbitmap.length);
-				
-				Log.i(tagName, "End");
+				Log.i(tagName, "base64 context from HTTP = "+base64);
+				Log.i(tagName, "HTTP End");
 				Toast.makeText(v.getContext(), "请求成功", Toast.LENGTH_LONG).show();
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				Log.e(tagName, "Except:", e.getCause());
 				Toast.makeText(v.getContext(),"请求失败", Toast.LENGTH_LONG).show();
 				e.printStackTrace();
-			}finally{
-				try {
-//					fromurl.close();
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 			}
 		}
 	}
@@ -134,6 +133,7 @@ public class MainActivity extends Activity {
 			byte[] base64Obj = (byte[]) map.get("base64");
 			String temp = new String(base64Obj);
 			String[] subs = temp.split(",");
+			Log.i(tagName, "base64 context from PHPRPC = " + new String(base64Obj));
 			base64Obj = subs[1].getBytes();
 			byte[] forbitmap = Base64.decode(base64Obj, Base64.DEFAULT);
 			Bitmap bitmap = BitmapFactory.decodeByteArray(forbitmap, 0, forbitmap.length);
@@ -158,6 +158,7 @@ public class MainActivity extends Activity {
 				String fromhprose = (String) result.get("base64");
 				String temp = new String(fromhprose.getBytes());
 				String[] subs = temp.split(",");
+				Log.i(tagName, "Base64 context from HPROSE = "+fromhprose);
 				byte[] fromprosebyte = subs[1].getBytes();
 				byte[] forBitmap = Base64.decode(fromprosebyte, Base64.DEFAULT);
 				Bitmap bitmap = BitmapFactory.decodeByteArray(forBitmap, 0, forBitmap.length);
@@ -169,6 +170,5 @@ public class MainActivity extends Activity {
 				Log.i(tagName, "Exception");
 			}
 		}
-		
 	}
 }
